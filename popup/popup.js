@@ -1,8 +1,7 @@
-// =============================================
 // Scaler Class Scheduler - popup
 // Owns: CSV upload/validation, start/stop, rendering run state from storage.
 // The content script owns the run once it starts.
-// =============================================
+
 'use strict';
 
 const PAGE_URL = 'https://www.scaler.com/scm/classes/schedule-classes';
@@ -19,7 +18,7 @@ let plan = null;   // { id, fileName, batches, errors, totalClasses }
 let run = null;
 let logs = [];
 
-// ─── Small DOM helper ──────────────────────────
+//Small DOM helper
 function el(tag, attrs = {}, ...children) {
   const node = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
@@ -53,14 +52,13 @@ function reportCSV(results) {
 
 const logText = list => (list || []).map(l => `[${fmtClock(l.t)}] [${l.type.toUpperCase()}] ${l.msg}`).join('\n');
 
-// ─── Tabs ──────────────────────────────────────
 document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === tab));
   document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === `panel-${tab.dataset.tab}`));
   if (tab.dataset.tab === 'history') renderHistory();
 }));
 
-// ─── CSV upload ────────────────────────────────
+
 const drop = $('drop');
 const fileInput = $('file');
 drop.addEventListener('click', () => { if (!isRunning()) fileInput.click(); });
@@ -86,7 +84,7 @@ function loadFile(file) {
 
 $('templateBtn').addEventListener('click', () => download('class_schedule_template.csv', SchedCSV.TEMPLATE, 'text/csv'));
 
-// ─── Start / Stop ──────────────────────────────
+
 const isRunning = () => run && run.status === 'running';
 
 $('startBtn').addEventListener('click', async () => {
@@ -138,7 +136,6 @@ $('stopBtn').addEventListener('click', async () => {
   }, 2500);
 });
 
-// ─── Downloads / debug ─────────────────────────
 $('logBtn').addEventListener('click', () => download(`scheduler_log_${Date.now()}.txt`, logText(logs)));
 $('reportBtn').addEventListener('click', () => { if (run) download(`schedule_report_${run.id}.csv`, reportCSV(run.results), 'text/csv'); });
 
@@ -164,7 +161,7 @@ function appendLocalLog(msg, type) {
   box.scrollTop = box.scrollHeight;
 }
 
-// ─── Rendering ─────────────────────────────────
+
 function render() {
   const running = isRunning();
   const runForPlan = run && plan && run.planId === plan.id ? run : null;

@@ -1,9 +1,3 @@
-// =============================================
-// Scaler Class Scheduler - content script
-// Runs on scaler.com/scm/classes/schedule-classes.
-// Processes ONE batch per page load, then navigates back to the same URL
-// for the next batch. All run state lives in chrome.storage.local.
-// =============================================
 (() => {
   'use strict';
   if (window.__sstSchedulerLoaded) return;
@@ -11,11 +5,11 @@
 
   const PAGE_URL = 'https://www.scaler.com/scm/classes/schedule-classes';
   const K = {
-    run: 'schedRun',         // run state (written by content once running)
-    logs: 'schedLogs',       // live log lines
-    stop: 'schedStop',       // stop flag (written by popup)
-    lock: 'schedLock',       // which tab owns the run + heartbeat
-    history: 'schedHistory', // finished runs
+    run: 'schedRun',        
+    logs: 'schedLogs',      
+    stop: 'schedStop',    
+    lock: 'schedLock',       
+    history: 'schedHistory',
   };
   const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   // "November 2026", "November2026", "Nov 2026", "November, 2026"
@@ -28,7 +22,7 @@
   const ERROR_RE = /error|fail|already|clash|conflict|unable|not available|unavailable|invalid|overlap|exists|cannot|can't|not allowed/i;
   const TAB_ID = Math.random().toString(36).slice(2);
 
-  // ─── Storage + logging ───────────────────────────────────
+  //Storage + logging
 
   const store = {
     get: keys => new Promise(r => chrome.storage.local.get(keys, r)),
@@ -54,7 +48,7 @@
     return logChain;
   }
 
-  // ─── Generic helpers ─────────────────────────────────────
+  // Generic helpers 
 
   class StopError extends Error {}
   // In a background tab Chrome throttles setTimeout (1/sec, then 1/min after ~5 min).
@@ -186,7 +180,7 @@
     throw new Error(`Could not ${want ? 'tick' : 'untick'} "${label}".`);
   }
 
-  // ─── Select (react-select style) helpers ─────────────────
+ 
 
   // From any element inside a select (e.g. its placeholder), find the select.
   function selectFrom(el) {
@@ -377,7 +371,7 @@
       .filter((q, i, a) => q.length >= 3 && a.indexOf(q) === i);
   }
 
-  // ─── Calendar helpers ────────────────────────────────────
+
 
   function findOpenCalendar() {
     // 1) A header like "November 2026" above a grid of days.
@@ -390,7 +384,7 @@
         }
       }
     }
-    // 2) Header split into separate month / year pieces: find the grid via its weekday row.
+  
     for (const wd of findTextEls(document, t => WEEKDAY_RE.test(t))) {
       let root = wd.parentElement;
       for (let i = 0; i < 7 && root; i++, root = root.parentElement) {
@@ -508,7 +502,6 @@
     return [field, iconClickable, icon, box, field.parentElement];
   }
 
-  // ─── Page steps ──────────────────────────────────────────
 
   async function waitForPage() {
     const ok = await waitFor(() => findSelectByPlaceholder(document, 'Select Batch/es') || byText(document, 'Batch and Library')[0], 30000);
@@ -868,8 +861,6 @@
     throw new Error('Could not pick a start date.');
   }
 
-  // ─── Preview modal ───────────────────────────────────────
-
   async function openPreview() {
     const btn = findButton('Confirm Schedule');
     if (!btn) throw new Error('Could not find the "Confirm Schedule" button.');
@@ -1056,8 +1047,6 @@
     }
     return toast;
   }
-
-  // ─── Run control ─────────────────────────────────────────
 
   let heartbeat = null;
   let heartbeatOn = false;

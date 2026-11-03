@@ -1,11 +1,9 @@
-// =============================================
 // Scaler Class Scheduler - runs inside the page (MAIN world) at document_start.
 // Lets the Scaler page keep working normally while its tab is in the background:
 //  - The page always sees itself as visible (no "pause when hidden" logic).
 //  - requestAnimationFrame, which Chrome stops in hidden tabs, gets a timer
 //    fallback so dropdowns, calendars and modals still open and position.
 // Only changes behaviour while the tab is actually hidden.
-// =============================================
 (() => {
   'use strict';
   if (window.__sstSchedulerPageWorld) return;

@@ -1,10 +1,9 @@
-// =============================================
 // Scaler Class Scheduler - background service worker
 // Keeps the run going while the Scaler tab is in the background:
 //  - "tick": a timer the content script waits on. Chrome throttles timers in
 //    hidden tabs (1/sec, then 1/min after ~5 min); service-worker timers are not.
 //  - "keepTab": stops Chrome's Memory Saver from discarding the tab mid-run.
-// =============================================
+
 'use strict';
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
