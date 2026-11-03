@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Scaler Class Scheduler</title>
+  <style>
+    :root {
+      --bg: #0f1117; --panel: #151823; --panel2: #1b1f2d; --line: #252a3a;
+      --text: #e6e8ef; --muted: #8a90a2; --dim: #5d6375;
+      --accent: #00d4ff; --ok: #2fd27d; --warn: #ffb020; --err: #ff6b6b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { width: 420px; background: var(--bg); color: var(--text); font: 13px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    button { font: inherit; cursor: pointer; }
+
+    header { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+    header .logo { width: 28px; height: 28px; border-radius: 7px; background: var(--accent); color: #000; display: grid; place-items: center; font-weight: 800; }
+    header h1 { font-size: 14px; font-weight: 700; }
+    header p { font-size: 11px; color: var(--muted); }
+
+    .tabs { display: flex; border-bottom: 1px solid var(--line); }
+    .tab { flex: 1; padding: 9px; text-align: center; color: var(--dim); font-weight: 600; font-size: 12px; border-bottom: 2px solid transparent; cursor: pointer; }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    section { padding: 12px 16px; border-bottom: 1px solid var(--line); }
+    .title { display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 8px; }
+    .link { background: none; border: none; color: var(--accent); font-size: 11px; text-transform: none; letter-spacing: 0; font-weight: 600; }
+    .link:disabled { color: var(--dim); cursor: default; }
+
+    .drop { border: 1.5px dashed var(--line); border-radius: 8px; padding: 14px; text-align: center; background: var(--panel); cursor: pointer; }
+    .drop:hover, .drop.over { border-color: var(--accent); }
+    .drop input { display: none; }
+    .drop .name { color: var(--accent); font-weight: 600; margin-top: 2px; word-break: break-all; }
+    .drop .hint { color: var(--muted); font-size: 12px; }
+
+    .stats { display: flex; gap: 8px; margin-top: 10px; }
+    .stat { flex: 1; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px; text-align: center; }
+    .stat b { display: block; font-size: 17px; }
+    .stat span { font-size: 10px; color: var(--muted); text-transform: uppercase; }
+    .stat.err b { color: var(--err); }
+
+    .errors { margin-top: 10px; max-height: 150px; overflow: auto; background: #ff6b6b12; border: 1px solid #ff6b6b44; border-radius: 8px; padding: 8px 10px; }
+    .errors div { color: var(--err); font-size: 12px; margin: 2px 0; }
+
+    .batches { display: flex; flex-direction: column; gap: 5px; max-height: 190px; overflow: auto; }
+    .batch { display: flex; align-items: center; gap: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 7px; padding: 7px 10px; }
+    .batch .n { color: var(--dim); font-size: 11px; width: 16px; }
+    .batch .info { flex: 1; min-width: 0; }
+    .batch .bn { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .batch .bl { color: var(--muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chip { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 7px; border-radius: 10px; background: var(--panel2); color: var(--muted); white-space: nowrap; }
+    .chip.running { color: var(--accent); background: #00d4ff1c; }
+    .chip.success { color: var(--ok); background: #2fd27d1c; }
+    .chip.failed, .chip.unknown { color: var(--err); background: #ff6b6b1c; }
+    .chip.stopped, .chip.dry-run, .chip.skipped { color: var(--warn); background: #ffb0201c; }
+
+    .opts { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .opts label { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+    select { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 5px 6px; font-size: 12px; max-width: 210px; }
+
+    .btn { width: 100%; border: none; border-radius: 8px; padding: 10px; font-weight: 700; }
+    .btn.primary { background: var(--accent); color: #001018; }
+    .btn.primary:disabled { opacity: .35; cursor: not-allowed; }
+    .btn.danger { background: var(--err); color: #fff; }
+    .btn.ghost { background: var(--panel); color: var(--muted); border: 1px solid var(--line); font-weight: 600; padding: 7px; font-size: 12px; }
+    .row { display: flex; gap: 8px; margin-top: 8px; }
+
+    .bar { height: 6px; background: var(--panel2); border-radius: 6px; overflow: hidden; margin: 8px 0 4px; }
+    .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--ok)); transition: width .4s; }
+    .progress-text { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+    .banner { margin-top: 8px; padding: 8px 10px; border-radius: 7px; font-size: 12px; }
+    .banner.success { background: #2fd27d18; color: var(--ok); }
+    .banner.failed { background: #ff6b6b18; color: var(--err); }
+    .banner.stopped, .banner.dry-run { background: #ffb02018; color: var(--warn); }
+
+    .log { background: #090b10; border: 1px solid var(--line); border-radius: 7px; height: 170px; overflow: auto; padding: 7px 9px; font: 11px/1.55 'SF Mono', Consolas, monospace; }
+    .log div { white-space: pre-wrap; word-break: break-word; }
+    .log .info { color: #9aa0b0; } .log .success { color: var(--ok); } .log .warn { color: var(--warn); } .log .error { color: var(--err); }
+
+    .hist { display: flex; flex-direction: column; gap: 6px; }
+    .hrow { background: var(--panel); border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px; }
+    .hrow .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .hrow .meta { color: var(--muted); font-size: 11px; margin-top: 3px; }
+    .hrow .acts { display: flex; gap: 10px; margin-top: 5px; }
+    .empty { color: var(--dim); text-align: center; padding: 18px; font-size: 12px; }
+    .note { color: var(--dim); font-size: 11px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">S</div>
+    <div>
+      <h1>Scaler Class Scheduler</h1>
+      <p>Schedule classes batch by batch from a CSV</p>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="run">Run</div>
+    <div class="tab" data-tab="history">History</div>
+  </div>
+
+  <div class="panel active" id="panel-run">
+    <section>
+      <div class="title">CSV <button class="link" id="templateBtn">Download template</button></div>
+      <div class="drop" id="drop">
+        <input type="file" id="file" accept=".csv,text/csv">
+        <div class="hint" id="dropHint">Click or drop your CSV here</div>
+        <div class="name" id="fileName"></div>
+      </div>
+      <div class="stats" id="stats" hidden>
+        <div class="stat"><b id="sBatches">0</b><span>Batches</span></div>
+        <div class="stat"><b id="sClasses">0</b><span>Classes</span></div>
+        <div class="stat" id="sErrBox"><b id="sErrors">0</b><span>Problems</span></div>
+      </div>
+      <div class="errors" id="errors" hidden></div>
+    </section>
+
+    <section id="batchSection" hidden>
+      <div class="title">Batches</div>
+      <div class="batches" id="batches"></div>
+    </section>
+
+    <section>
+      <div class="opts">
+        <label>Start from <select id="startFrom"></select></label>
+        <label title="Fills the first batch and the preview, but does not click Confirm & Schedule"><input type="checkbox" id="dryRun"> Dry run</label>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="startBtn" disabled>Start scheduling</button>
+        <button class="btn danger" id="stopBtn" hidden>Stop</button>
+      </div>
+      <div class="bar"><i id="barFill"></i></div>
+      <div class="progress-text"><span id="progText">Not started</span><span id="progPct"></span></div>
+      <div class="banner" id="banner" hidden></div>
+    </section>
+
+    <section>
+      <div class="title">Log
+        <span style="display:flex;gap:12px">
+          <button class="link" id="reportBtn" disabled>Report CSV</button>
+          <button class="link" id="logBtn">Download log</button>
+        </span>
+      </div>
+      <div class="log" id="log"><div class="info">Upload a CSV to begin.</div></div>
+      <div class="row">
+        <button class="btn ghost" id="snapshotBtn" title="Saves the page HTML so selectors can be fixed if Scaler changes the page">Save page HTML (for debugging)</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="panel" id="panel-history">
+    <section>
+      <div class="title">Past runs <button class="link" id="clearHistBtn">Clear</button></div>
+      <div class="hist" id="history"></div>
+    </section>
+  </div>
+
+  <script src="../lib/csv.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
